@@ -64,7 +64,7 @@ import com.google.common.primitives.Ints;
  * <p> <b>TLDR:</b> use UTF-8 strings (byte[]) everywhere possible especially
  * between different code bases and when communicating with filesystems, and as
  * the always preferred file encoding format in text files.  Use indexing of the
- * UTF-8 string (byte[]) to speed up locating codepoints and graphemes within
+ * UTF-8 string (byte[]) to speed up locating code points and graphemes within
  * the string (Java doesn't do this, so we've work to do).
  * Refer <a href="http://utf8everywhere.org/">http://utf8everywhere.org/</a>
  *
@@ -140,7 +140,7 @@ import com.google.common.primitives.Ints;
  *    as single code points, such as {@code LATIN CAPITAL LETTER A WITH ACUTE}
  *    ({@code U+00C1}, "Á").
  *
- *    <li> So some codepoints do not constitute and or are not part of the
+ *    <li> So some code points do not constitute and or are not part of the
  *    representation of any grapheme.
  *
  *    <li> Unicode specifies various <b>nomalization</b> forms where combining
@@ -221,15 +221,15 @@ import com.google.common.primitives.Ints;
  *    <li> But wait it gets better - if you want to determine graphemes (let's
  *    not even talk about glyphs), nope that can't be done (yet).
  *
- *    <li> Java's <b>String</b> class ostensibly stores a UTF-16 encoded {@code
- *    char[]}.  There is nothing in principle stopping a UTF-8 byte[]
- *    implementation (which is evidently indicated in the hindsight of history)
- *    and this ought be nothing more than a piddly implementation detail,
- *    notwithstanding any legacy yet-to-be-converted API's and their snivelling
- *    performance issues - which would likely act as a rather practical and
- *    motivating todo list.  Righto - let's get cracking then shall we?  In the
- *    meantime, without handling graphemes, {@code java.lang.String} defeats its
- *    own purpose surprisingly well.
+ *    <li> Java's <b>String</b> class ostensibly stores a UTF-16 encoded code
+ *    point sequence in a {@code char[]}.  There is nothing in principle
+ *    stopping a UTF-8 byte[] implementation (which is evidently indicated in
+ *    the hindsight of history) and this ought be nothing more than a piddly
+ *    implementation detail, notwithstanding any legacy yet-to-be-converted
+ *    API's and their snivelling performance issues - which would likely act as
+ *    a rather practical and motivating todo list.  Righto - let's get cracking
+ *    then shall we?  In the meantime, without handling graphemes, {@code
+ *    java.lang.String} defeats its own purpose surprisingly well.
  *
  *    <li> Finally to highlight unequivocally the problems we programmers face,
  *    some graphemes are normally displayed using <b>wide glyphs</b>, some
@@ -526,7 +526,7 @@ Regarding some of the draft implementation and api choices in this class:
 
 
    /**
-    * Returns the number of unicode codepoints in this string.
+    * Returns the number of unicode code points in this string.
     *
     * <p>This is the same as the number of Unicode UTF-32 code units required to
     * UTF-32 encode this string.
@@ -535,7 +535,7 @@ Regarding some of the draft implementation and api choices in this class:
     *
     * @return The code point count.
     */
-   public int countCodepoints () {return cpcount;}
+   public int countCodePoints () {return cpcount;}
 
 
    /**
@@ -643,7 +643,7 @@ Regarding some of the draft implementation and api choices in this class:
     * There are length() + 1 cpcindices, where each index is the location in the
     * utf-16 char[] of a grapheme boundary.
     */
-   public int[] getCodepointUTF16Indices () {
+   public int[] getCodePointUTF16Indices () {
       return cpcindices;
    }
 
@@ -651,7 +651,7 @@ Regarding some of the draft implementation and api choices in this class:
    /**
     * Returns the code point at {@code cpindex}.
     */
-   public int codepointToInt (int cpindex) {
+   public int codePointToInt (int cpindex) {
       return toString().codePointAt(cpcindices[cpindex]);
    }
 
@@ -661,7 +661,7 @@ Regarding some of the draft implementation and api choices in this class:
     * Not implemented yet; throws UnsupportedOperationException.
     * In current implementation, easy to implement.
     */
-   public int[] codepointsToInts (int cpistart, int cpiend) {
+   public int[] codePointsToInts (int cpistart, int cpiend) {
       throw new UnsupportedOperationException("Not implemented");
    }
 
@@ -669,7 +669,7 @@ Regarding some of the draft implementation and api choices in this class:
    /**
     * Returns this string as code points in an int[].
     */
-   public int[] codepointsToInts () {
+   public int[] codePointsToInts () {
       int[] cpa = new int[cpcount];
       String text = toString();
       for (int i = cpcount - 1; i >= 0; --i) cpa[i] = text.codePointAt(cpcindices[i]);
@@ -680,7 +680,7 @@ Regarding some of the draft implementation and api choices in this class:
    /**
     * Returns a UTF-16 encoded char[] of the code point at {@code cpindex}.
     *
-    * <p>Code points are indexed from zero to {@code countCodepoints() - 1}.
+    * <p>Code points are indexed from zero to {@code countCodePoints() - 1}.
     *
     * @param cpindex The code point index of the code point to return.
     *
@@ -690,13 +690,13 @@ Regarding some of the draft implementation and api choices in this class:
     *    {@code index} is negative or greater than {@code this.length()} or
     *    {@code end} is less than -1 or greater than {@code this.length()}. 
     */
-   public char[] codepointToChars (int cpindex) {
+   public char[] codePointToChars (int cpindex) {
       // the corresponding method with a range rather than index handles
       // reversibility and so the following has slightly less overhead than
       // calling that method
       if (cpindex < 0 || cpindex >= cpcount)
          throw new IndexOutOfBoundsException("Graphemes.getGrapheme: cpindex=" + cpindex
-            + ", codepoints=" + cpcount);
+            + ", countCodePoints=" + cpcount);
       int first = cpcindices[cpindex];
       int last = cpcindices[cpindex + 1];
       int nchar = last - first;
@@ -709,15 +709,15 @@ Regarding some of the draft implementation and api choices in this class:
    /**
     * Returns a UTF-16 encoded char[] range (reversible) of code points.
     *
-    * <p>Code points are indexed from zero to {@code countCodepoints() - 1}.
+    * <p>Code points are indexed from zero to {@code countCodePoints() - 1}.
     *
     * @param cpistart The code point index inclusive of the first code point to
     * return.
-    * Valid range is {@code (0, this.countCodepoints() - 1)}.
+    * Valid range is {@code (0, this.countCodePoints() - 1)}.
     *
     * @param cpiend The code point index exclusive of the last code point to
     * return.
-    * Valid range is {@code (-1, this.countCodepoints())}.
+    * Valid range is {@code (-1, this.countCodePoints())}.
     *
     * @return A char[] of the UTF-16 encoded code points in the range requested.
     * If {@code cpiend < cpistart} then the code point sequence is reversed.
@@ -727,13 +727,13 @@ Regarding some of the draft implementation and api choices in this class:
     *    {@code cpistart < 0} or {@code cpistart >= length()} or
     *    {@code cpiend < -1} or {@code cpiend > length()}. 
     */
-   public char[] codepointsToChars (int cpistart, int cpiend) {
+   public char[] codePointsToChars (int cpistart, int cpiend) {
       // This impl might be made simpler, but no point since the 'reversible'
       // algorithm will be more important when we store in ByteBuffer; the
       // algorithm will essentially be identical, just based on bytes.
       if (cpistart < 0 || cpistart >= cpcount || cpiend < -1 || cpiend > cpcount)
          throw new IndexOutOfBoundsException("Graphemes.get: cpistart=" + cpistart
-            + ", cpiend=" + cpiend + ", countCodepoints=" + cpcount);
+            + ", cpiend=" + cpiend + ", countCodePoints=" + cpcount);
       if (cpistart == cpiend) return new char[0];
       int delta;
       int cpclen; // code point char length
@@ -756,11 +756,11 @@ Regarding some of the draft implementation and api choices in this class:
     * Returns a byte[] containing the chosen code point encoded as UTF-8.
     * Not implemented yet; throws UnsupportedOperationException.
     *
-    * <p>Code points are indexed from zero to {@code countCodepoints() - 1}.
+    * <p>Code points are indexed from zero to {@code countCodePoints() - 1}.
     *
     * @param cpindex The code point index of the code point to return.
     */
-   public byte[] codepointsToBytes (int cpindex) {
+   public byte[] codePointsToBytes (int cpindex) {
       throw new UnsupportedOperationException("Not implemented");
    }
 
@@ -769,14 +769,14 @@ Regarding some of the draft implementation and api choices in this class:
     * Returns a byte[] containing the chosen code points encoded as UTF-8.
     * Not implemented yet; throws UnsupportedOperationException.
     *
-    * <p>Code points are indexed from zero to {@code countCodepoints() - 1}.
+    * <p>Code points are indexed from zero to {@code countCodePoints() - 1}.
     *
     * @param cpistart The first code point index inclusive of the range of code
     * points to return.
     * @param cpiend The last code point index exclusive of the range of code
     * points to return.
     */
-   public byte[] codepointsToBytes (int cpistart, int cpiend) {
+   public byte[] codePointsToBytes (int cpistart, int cpiend) {
       throw new UnsupportedOperationException("Not implemented");
    }
 
@@ -932,24 +932,24 @@ Regarding some of the draft implementation and api choices in this class:
 
 
    /**
-    * Append code points in the range {@code cpstart} to {@code cpend} into
-    * {@code sb};  {@code cpstart} may be less than {@code cpend}, in which case
-    * the code points are appended in reverse order.
+    * Append code points in the range {@code (cpistart, cpiend)} into {@code
+    * sb};  {@code cpistart} may be less than {@code cpiend} in which case the
+    * code points are appended in reverse order.
     *
-    * @param cpstart The first code point (index inclusive) to append to sb.
-    * Valid range is from 0 to (this.codepoints() - 1).
-    * @param cpend The last code point (index, exclusive) to append to sb.
-    * Valid range is from -1 to this.codepoints().
+    * @param cpistart The first code point (index inclusive) to append to sb.
+    * Valid range is from 0 to (this.countCodePoints() - 1).
+    * @param cpiend The last code point (index, exclusive) to append to sb.
+    * Valid range is from -1 to this.countCodePoints().
     * If cpend is less than cpstart, code points are appended in reverse order.
     * @throws IndexOutOfBoundsException if cpstart or cpend are out of valid
     * range.
     */
-   public void appendCodepointsTo (StringBuilder sb, int cpistart, int cpiend) {
-      // we could just call insertCodepointsInto, but the following is higher
+   public void appendCodePointsTo (StringBuilder sb, int cpistart, int cpiend) {
+      // we could just call insertCodePointsInto, but the following is higher
       // performance, which might be considered important for java.lang.string
       if (cpistart < 0 || cpistart >= cpcount || cpiend < -1 || cpiend > cpcount)
          throw new IndexOutOfBoundsException("Graphemes.appendTo: cpistart=" + cpistart
-            + ", cpiend=" + cpiend + ", countCodepoints=" + cpcount);
+            + ", cpiend=" + cpiend + ", countCodePoints=" + cpcount);
       if (cpistart == cpiend) return;
       int delta = (cpiend < cpistart) ? -1 : 1;
       for (int i = cpistart; i != cpiend; i += delta) sb.append(chars, cpcindices[i], cpcindices[i+1]);
@@ -959,7 +959,7 @@ Regarding some of the draft implementation and api choices in this class:
    /**
     * Inserts a range (reversible) of code points into a StringBuilder.
     *
-    * <p>Code points are indexed from zero to {@code countCodepoints() - 1}.
+    * <p>Code points are indexed from zero to {@code countCodePoints() - 1}.
     *
     * <p>If {@code cpiend < cpistart} then the code point sequence is reversed.
     *
@@ -973,21 +973,21 @@ Regarding some of the draft implementation and api choices in this class:
     *
     * @param cpistart The code point index inclusive of the first code point to
     * insert into sb.
-    * Valid range is {@code (0, this.countCodepoints() - 1)}.
+    * Valid range is {@code (0, this.countCodePoints() - 1)}.
     *
     * @param cpiend The code point index exclusive of the last code point to
     * insert into sb.
-    * Valid range is {@code (-1, this.countCodepoints())}.
+    * Valid range is {@code (-1, this.countCodePoints())}.
     *
     * @throws IndexOutOfBoundsException if
     *    {@code cpistart < 0} or {@code cpistart >= length()} or
     *    {@code cpiend < -1} or {@code cpiend > length()} or
     *    {@code sbdest} is not a valid location in {@code sb}.
     */
-   public void insertCodepointsInto (int sbdest, StringBuilder sb, int cpistart, int cpiend) {
+   public void insertCodePointsInto (int sbdest, StringBuilder sb, int cpistart, int cpiend) {
       if (cpistart < 0 || cpistart >= cpcount || cpiend < -1 || cpiend > cpcount)
          throw new IndexOutOfBoundsException("Graphemes.appendTo: cpistart=" + cpistart
-            + ", cpiend=" + cpiend + ", countCodepoints=" + cpcount);
+            + ", cpiend=" + cpiend + ", countCodePoints=" + cpcount);
       if (cpistart == cpiend) return;
       StringBuilder tmp = new StringBuilder((cpistart-cpiend)*2);
       int delta = (cpiend < cpistart) ? -1 : 1;
@@ -998,7 +998,7 @@ Regarding some of the draft implementation and api choices in this class:
 
    /** Returns a verbosely descriptive java.lang.String of this string. */
    public String toDebugString () {
-      return "zen.lang.string: codepoints=" + cpcount + " cpcindices=" + Arrays.toString(cpcindices);
+      return "zen.lang.string: countCodePoints=" + cpcount + " cpcindices=" + Arrays.toString(cpcindices);
    }
 
 
