@@ -44,9 +44,9 @@ import com.google.common.primitives.Ints;
  *
  * <p> This class is the beginnings of a proper Java string class, which might
  * be thought of as a UTF-8 encoded "grapheme string" - Java as of version 8.0
- * only has APIs to work with Unicode code points (codepoints) and not "visual or displayed
- * characters" such as those with multiple accents (Unicode "combining
- * characters").  Surprised? I was, thus this class.
+ * only has APIs to work with Unicode code points (codepoints) and not "visual
+ * or displayed characters" such as those with multiple accents (Unicode
+ * "combining characters").  Surprised? I was, thus this class.
  *
  * <p> The term "UTF-8 grapheme string" is a misnomer since UTF-8 defines a byte
  * sequence encoding of Unicode/UCS code points which include graphemes as well
@@ -84,16 +84,19 @@ import com.google.common.primitives.Ints;
  * <p> <b>This class' current limitations are due to relying upon {@code
  * java.text.BreakIterator} and its {@code getCharacterInstance(Locale)} method,
  * which only provides Unicode code point breaks and not "visual" character
- * (grapheme) breaks.
+ * (grapheme) breaks.</b>
  *
- * <p> Java as of version 8.0 does not provide Character methods such as
+ * <p> <b>Java as of version 8.0 does not provide Character methods such as
  * isCombiningCharacter(codepoint) nor isUnicodeControlCharacter(codepoint);
  * TODO - try using icu4j instead</b>
  *
  * <p> For comparison to Java, see
  * <a href="https://developer.apple.com/library/ios/documentation/Swift/Conceptual/Swift_Programming_Language/StringsAndCharacters.html">
  * Swift's Strings and Characters</a>, which is much younger, better and
- * certainly has advantage of the benefit of hindsight.
+ * certainly has advantage of the benefit of hindsight. Also Perl 6 seems to be
+ * getting closer to competency as well, see
+ * <a href="http://www.cattlegrid.info/blog/2014/12/graphemes-code-points-characters-and-bytes.html">
+ * Graphemes, code points, characters and bytes</a>.
  *
  * <p> Notes:
  *
@@ -106,17 +109,21 @@ import com.google.common.primitives.Ints;
  *    or even to graphemes, grapheme clusters, glyphs or any sequence of such or
  *    other things.
  *
- *    <li> The <b>Unicode</b> standard specifies Unicode code points, various
+ *    <li> The <b>Unicode</b> <a href="http://unicode.org/">standard</a>
+ *    specifies Unicode code points, various
  *    code point encodings, encoding specific storage 'code units' and code unit
  *    sequences (how code points are represented in an encoding), combining
  *    characters and their normalization forms, the optional byte order mark
  *    (BOM), how sequences of code points map (algorithmically) to graphemes and
  *    more.
  *
- *    <li> A Unicode <b>code point</b> (or codepoint) represents one of a number of things,
+ *    <li> A Unicode <b>code point</b> is <a
+ *    href="http://unicode.org/glossary/#code_point">Any value in the Unicode
+ *    codespace</a>. It represents one of a number of things,
  *    including characters of the world's languages/ scripts, Unicode control
  *    characters, the BOM, specials (I'm sure they are), locals, combining
- *    characters and more.
+ *    characters and more, see <a
+ *    href="http://unicode.org/glossary/#code_point_type">code point type</a>.
  *
  *    <li> Code points are not graphemes though some code points map to
  *    graphemes depending on their context in a code point sequence.
@@ -126,23 +133,31 @@ import com.google.common.primitives.Ints;
  *    the consequence being all code points will be representable in a UTF-8
  *    byte stream with at most 4 bytes (4 * 8-bits).
  *
- *    <li> A Unicode <b>combining character</b> modifies another character;
+ *    <li> A Unicode <b>combining character</b> sometimes called
+ *    <a href="http://unicode.org/glossary/#combining_character">combining
+ *    mark</a> modifies another character;
  *    examples include the diacritical marks, International Phonetic Alphabet
  *    (IPA) symbols, IPA diacritics, the combining graphene joiner, double
  *    diacritics which are combined with (and are placed across) two characters,
  *    and more.  Multiple combinations of combining characters are valid to use
  *    in sequence.
+ *    See Unicode's <a href="http://unicode.org/faq/char_combmark.html">
+ *    Characters and Combining Marks</a>.
  *
- *    <li> A Unicode <b>grapheme</b> represents a user perceived character which
- *    the user might move over with a text cursor using a "single character"
- *    cursor movement or might delete with a single press of the {@code
- *    <BACKSPACE>} or {@code <DELETE>} key.
+ *    <li> A Unicode <b>grapheme</b> represents a <a
+ *    href="http://unicode.org/glossary/#grapheme">user perceived character</a>
+ *    which the user might move over with a text cursor using a "single
+ *    character" cursor movement or might delete with a single press of the
+ *    {@code <BACKSPACE>} or {@code <DELETE>} key.
  *
- *    <li> A <b>grapheme cluster</b> is the ideal way to represent "characters
- *    as the user perceives them" and we who had enjoyed Java's hegemony pine
- *    with grief at <a
- *    href="https://developer.apple.com/library/ios/documentation/Swift/Conceptual/Swift_Programming_Language/StringsAndCharacters.html#//apple_ref/doc/uid/TP40014097-CH7-ID296">
+ *    <li> A <a href="http://unicode.org/glossary/#grapheme_cluster"><b>grapheme
+ *    cluster</b></a> is the ideal way to represent "characters as the user
+ *    perceives them" and we who had enjoyed Java's hegemony pine with grief at
+ *    <a href="https://developer.apple.com/library/ios/documentation/Swift/Conceptual/Swift_Programming_Language/StringsAndCharacters.html#//apple_ref/doc/uid/TP40014097-CH7-ID296">
  *    Swift's competency</a> in this regard.
+ *
+ *    <li> At the time of typing this, the author is unable to clearly
+ *    differentiate between graphemes and grapheme clusters.
  *
  *    <li> A grapheme is represented by a sequence of one or more code points,
  *    such as {@code LATIN CAPITAL LETTER A} ({@code U+0041}, "A") followed by
@@ -156,13 +171,17 @@ import com.google.common.primitives.Ints;
  *    <li> So some code points do not constitute and or are not part of the
  *    representation of any grapheme.
  *
- *    <li> Unicode specifies various <b>nomalization</b> forms where combining
- *    characters are used where possible or avoided where possible, in a code
- *    point stream.
+ *    <li> <a href="http://www.unicode.org/versions/Unicode7.0.0/ch03.pdf#G49537">
+ *    Unicode specifies</a> various
+ *    <a href="http://unicode.org/glossary/#normalization"><b>nomalization</b></a>
+ *    forms where combining characters are used where possible or avoided where
+ *    possible, in a code point stream; this can provide for binary equivalence
+ *    comparison.
  *    See also {@code java.text.Normalizer}.
  *
- *    <li> A <b>glyph</b> is an element of a font which is displayed to the user
- *    within a textual or graphical display environment.
+ *    <li> A <a href="http://unicode.org/glossary/#glyph"><b>glyph</b></a> is an
+ *    element of a font which is displayed to the user within a textual or
+ *    graphical display environment.
  *
  *    <li> One or more glyphs may be needed to correctly display a single
  *    grapheme, for example with a glyph corresponding to a combining character
@@ -181,70 +200,84 @@ import com.google.common.primitives.Ints;
  *
  *    <li><a name="surrogates"></a> A Java {@code char} is not even a code
  *    point, although:<br>
- *    a) it can represent some code points namely those in the <b>Unicode
- *    BMP</b>, the "basic multilingual plane" which is the first 16-bit group or
+ *    a) it can represent some code points namely those in the Unicode
+ *    <b>BMP</b> or "basic multilingual plane" which is the first <a
+ *    href="http://unicode.org/glossary/#BMP_character">16-bit group</a> or
  *    Unicode "plane" of code points, and<br>
  *    b) it can also hold UTF-16 surrogate code point halves
  *    ("<b>surrogates</b>") for those code points outside the BMP.<br>
  *    If you're not impressed with Java's {@code char}s, neither am I - they're
  *    not very impressive at all.  {@code byte} - now there's a powerful type!
  *
- *    <li> A well formed <b>surrogate</b> is one half of a
- *    "paired 16 bit code units" code point, whereas an ill formed surrogate is
- *    <em>unpaired</em>, i.e. without its matching half, and is an error
- *    condition.<br>
+ *    <li> A <a href="http://unicode.org/glossary/#surrogate_pair">well
+ *    formed</a> <b>surrogate</b> is one half of a "paired 16 bit code units"
+ *    code point, whereas an ill formed surrogate is <em>unpaired</em>, i.e.
+ *    without its matching half, and is an error condition.<br>
  *    Refer the Unicode FAQ
  *    <a href="http://unicode.org/faq/utf_bom.html#utf16-2">What are
  *    surrogates?</a> and
  *    <a href="http://unicode.org/faq/utf_bom.html#utf8-5">How do I convert an
  *    unpaired UTF-16 surrogate to UTF-8?</a>
  *
- *    <li> A Unicode <b>encoding</b> defines a bit format for storing,
- *    transmitting or otherwise representing code points in a digital medium.
+ *    <li> A Unicode <a
+ *    href="http://unicode.org/glossary/#character_encoding_scheme"><b>encoding</b>
+ *    scheme</a> defines a bit format for storing, transmitting or otherwise
+ *    representing code points in a digital medium.
  *
- *    <li> Encodings encode code points into a sequence of one or more Unicode
- *    <b>code units</b>.  A code unit is a "storage unit" (8, 16 or 32 bit
- *    value) in an encoding.  Code unit format and sequencing are specific to an
- *    encoding.
+ *    <li> Encodings encode <a
+ *    href="http://unicode.org/glossary/#code_point">code points</a> into a
+ *    sequence of one or more Unicode <b>code units</b>.  A <a
+ *    href="http://unicode.org/glossary/#code_unit">code unit</a> is a "storage
+ *    unit" (8, 16 or 32 bit value) in an encoding.  Code unit format and
+ *    sequencing are specific to an encoding.
  *
- *    <li> Unicode encodings include for example <b>UTF-8</b>, UTF-16LE and
- *    UTF-32.  Some encodings cannot normally represent all unicode code points,
- *    for example ASCII.  UTF-8 can represent all code points.
+ *    <li> Unicode encodings include for example <a
+ *    href="http://unicode.org/glossary/#UTF_8"><b>UTF-8</b></a>, <a
+ *    href="http://unicode.org/glossary/#UTF_16LE">UTF-16LE</a> and <a
+ *    href="http://unicode.org/glossary/#UTF_32">UTF-32</a>.  Some encodings
+ *    cannot normally represent all unicode code points, for example <a
+ *    href="http://unicode.org/glossary/#ASCII">ASCII</a>.
+ *    UTF-8 can represent all code points.
  *
  *    <li> Due to endian issues, anything other than UTF-8 is not self
- *    describing without a <b>BOM</b> or <b>byte order mark</b> also known
- *    originally as "zero-width non-breaking space" (this whitespace usage is
- *    still valid but since deprecated in Unicode 3.2 oh happy joy).  The BOM
- *    messes up UTF-8 data streams where it's not expected or not otherwise
- *    handled correctly and the joy only increases.
+ *    describing without a <b>BOM</b> or <a
+ *    href="http://unicode.org/glossary/#byte_order_mark"><b>byte order
+ *    mark</b></a> also known originally as "zero-width non-breaking space"
+ *    (this whitespace usage is still valid but since deprecated in Unicode 3.2
+ *    oh happy joy).  The BOM <a
+ *    href="http://utf8everywhere.org/#faq.boms">messes up</a> UTF-8 data
+ *    streams where it's not expected or not otherwise handled correctly and the
+ *    joy only increases.
  *
- *    <li> So where at all possible in UTF-8 streams (which we should almost
- *    always be using) <b>never use a BOM</b>.
+ *    <li> So <a href="http://utf8everywhere.org/#faq.boms">where at all
+ *    possible</a> in UTF-8 streams (which we should almost always be using)
+ *    <b>never use a BOM</b>.
  *
  *    <li> In Java e.g. at {@code java.lang.String#codePointAt(index)} the index
  *    points at a char value which the javadoc names as a "Unicode code unit".
- *    Beware as this is neither a code point, character, grapheme nor glyph -
- *    nothing but a lowly, miserably little char!  "Code unit" as used here in
- *    Java is just a fancy name for "I'm so damn cool I can spel UTF-16BE BMP
- *    code point in a char and UTF-16LE non-BMP code point surrogate half "code
- *    unit" in a char take that! Haha try and figure out which."  Resist the
- *    temptation to figure out the riddle.  Don't be fooled friends - it's
- *    useless for anything much at all except reminding us what a bad design
- *    decision Java's {@code String} class was (in hindsight).
+ *    Beware as <b>this is neither a code point, character, grapheme nor
+ *    glyph</b> - nothing but a lowly, miserably little char!  "Code unit" as
+ *    used here in Java is just a fancy name for "I'm so damn cool I can spel
+ *    UTF-16BE BMP code point in a char and UTF-16LE non-BMP code point
+ *    surrogate half "code unit" in a char take that! Haha try and figure out
+ *    which."  Resist the temptation to figure out the riddle.  Don't be fooled
+ *    friends - it's useless for anything much at all except reminding us what a
+ *    bad design decision Java's {@code String} class was (in hindsight).
  *
  *    <li> Next, {@code java.text.BreakIterator#getCharacterInstance(Locale)}
  *    returns break indices for (Unicode) code point boundaries and not for
- *    graphemes, characters, glyphs, chars or anything useful really.
- *    This iterator, better than nothing I guess, is merely a code point
+ *    graphemes, characters, glyphs, chars or anything useful really.  This
+ *    iterator, better than nothing I guess, is merely a code point
  *    surrogate-pair extractor for Java's UTF-16 strings, slapping all comers in
  *    the face with its irreverent disregard for invisibles, controls, specials,
  *    even combining characters and in fact anything remotely resembling
- *    graphemes, let alone those hallowed unreachable glyphs!
- *    The use of the term "character" in this method's name is both misleading
- *    and wildly overloaded, especially in Java context!
+ *    graphemes, let alone those hallowed unreachable glyphs!  The use of the
+ *    term "character" in this method's name is both misleading and wildly
+ *    overloaded and horrendously overrated, especially in Java context!
  *
  *    <li> But wait it gets better - if you want to determine graphemes (let's
- *    not even talk about glyphs), nope that can't be done (yet).
+ *    not even talk about glyphs), nope that can't be done (at least as at Java
+ *    8).
  *
  *    <li> Java's <b>String</b> class ostensibly stores a UTF-16 encoded code
  *    point sequence in a {@code char[]}.  There is nothing in principle
@@ -330,18 +363,37 @@ import com.google.common.primitives.Ints;
  * <p> Glyph widths might for example in a text environment be in some suitable
  * environment units, with 'normal' characters being width 1 and 'wide'
  * characters being width 2.  This is presently an exercise for the excessively
- * curious and diligent :)
+ * curious and diligent.
  *
  * <p> Note: There's no point being upset with Java's UTF-16 String class and
  * char primitive, since at the time these were chosen for Java, it was
  * erroneously believed by those making that choice that 16 bits would be enough
  * to encode all the world's characters and therefore "should be enough for
- * anyone, even a programming language" :)
+ * anyone, even a programming language."<br>
+ * BUT, there IS a point in complaining that once Java 1.0 was released, and
+ * prior to Java 1.1 being released, that Java should have had a serious String
+ * enhancement plan of action, due to the fundamental change in Unicode, which
+ * Java has forever been fundamentally incompatible with (practically, as in for
+ * regular day to day programming, or anything other than herculean efforts on
+ * behalf of the programmer anyway). Swift gets it right whilst Java's 20 years
+ * late to the party.
  *
- * <p> Note: Java's current usage of bastadardized UTF-8 ("modified UTF-8") in
- * some cases such as JNI ought be eliminated, removed, stopped, stamped out and
- * completely extricated from a future version of Java.  Bring on the
- * deprecations.
+ * <p> <b>WARNING</b>: Java's <a
+ * href="https://docs.oracle.com/javase/6/docs/api/java/io/DataInput.html">current
+ * usage</a> of <a
+ * href="http://stackoverflow.com/questions/7921016/what-does-it-mean-to-say-java-modified-utf-8-encoding">bastadardized
+ * UTF-8</a> ("<a
+ * href="http://en.wikipedia.org/wiki/UTF-8#Modified_UTF-8">modified UTF-8</a>")
+ * in some cases such as JNI <a
+ * href="http://banachowski.com/deprogramming/2012/02/working-around-jni-utf-8-strings/">ought
+ * be eliminated</a>, <a
+ * href="https://wikigurus.com/Article/Show/199390/Java-modified-UTF-8-strings-in-Python">removed</a>,
+ * <a
+ * href="https://www.securecoding.cert.org/confluence/display/java/JNI04-J.+Do+not+assume+that+Java+strings+are+null-terminated">stopped</a>,
+ * <a
+ * href="http://bitbrothers.org/blog/2013/08/jni-strings-modified-utf8-oh-my/">stamped
+ * out and completely extricated</a> from a future version of Java.  Bring on
+ * the deprecations.
  *
  * <p> Note: It is probably in the interests of the Java language to have a class
  * possibly similar to this one as a "new string" type perhaps named {@code
@@ -370,16 +422,21 @@ import com.google.common.primitives.Ints;
  *
  * <p> There are plenty api thoughts to think and some questions are in the code
  * comments below in this class.  Definitive answers would be nice.
+ * <b>Swift appears to get it basically right.</b>
  *
  * <p> In case it was unclear note also that string literals as they appear in
  * <b>source files</b> are in the charset/encoding of the source file itself,
- * whatever that happens to be (of course we do encourage UTF-8 :)
+ * whatever that happens to be (of course we do <a
+ * href="http://utf8everywhere.org/">insist on UTF-8</a>).
  *
  * <p> For further information see the following:
  *
  * <p> <ul>
  *    <li> <a href="http://utf8everywhere.org/">http://utf8everywhere.org/</a> - UTF-8. And why.
+ *    <li> <a href="http://unicode.org/glossary/">http://unicode.org/glossary/</a> - Unicode Glossary
  *    <li> <a href="http://unicode.org/reports/tr15/">http://unicode.org/reports/tr15/</a> - Unicode normalization forms.
+ *    <li> <a href="http://unicode.org/faq/utf_bom.html#utf16-2">http://unicode.org/faq/utf_bom.html#utf16-2</a> - Unicode, What are surrogates?
+ *    <li> <a href="http://unicode.org/faq/utf_bom.html#utf8-5">http://unicode.org/faq/utf_bom.html#utf8-5</a> - Unicode, How do I convert an unpaired UTF-16 surrogate to UTF-8?
  *    <li> <a href="http://www.oracle.com/us/technologies/java/supplementary-142654.html">http://www.oracle.com/us/technologies/java/supplementary-142654.html</a> - Supplementary Characters in the Java Platform
  *    <li> <a href="http://userguide.icu-project.org/">http://userguide.icu-project.org/</a> - Introduction to ICU
  *    <li> <a href="http://en.wikipedia.org/wiki/Unicode">http://en.wikipedia.org/wiki/Unicode</a>
@@ -394,6 +451,8 @@ import com.google.common.primitives.Ints;
  *    <li> <a href="http://stackoverflow.com/questions/3956734/why-does-the-java-char-primitive-take-up-2-bytes-of-memory">http://stackoverflow.com/questions/3956734/why-does-the-java-char-primitive-take-up-2-bytes-of-memory</a>
  *    <li> <a href="http://www.cl.cam.ac.uk/~mgk25/unicode.html">http://www.cl.cam.ac.uk/~mgk25/unicode.html</a> - UTF-8 and Unicode FAQ for Unix/Linux
  *    <li> <a href="http://unix.stackexchange.com/questions/139493/how-can-i-make-unicode-symbols-and-truetype-fonts-work-in-xterm-uxterm">http://unix.stackexchange.com/questions/139493/how-can-i-make-unicode-symbols-and-truetype-fonts-work-in-xterm-uxterm</a>
+ *    <li> <a href="https://developer.apple.com/library/ios/documentation/Swift/Conceptual/Swift_Programming_Language/StringsAndCharacters.html">https://developer.apple.com/library/ios/documentation/Swift/Conceptual/Swift_Programming_Language/StringsAndCharacters.html</a> - Swift
+ *    <li> <a href="http://www.cattlegrid.info/blog/2014/12/graphemes-code-points-characters-and-bytes.html">http://www.cattlegrid.info/blog/2014/12/graphemes-code-points-characters-and-bytes.html</a> - Perl 6
  * </ul>
  *
  * <p> <b>Rule 1.</b> UTF-8 is the only charset encoding.
