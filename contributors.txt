@@ -49,5 +49,5 @@ the end of the following contributors list.
 
 CONTRIBUTORS:
 
-YYYY/MM/DD, github id, Full name, email
-2015/05/13, zenaan, Zenaan Harkness, project-zen@freedbms.net
+YYYY/MM/DD, gitsrc, id,     full name,       email
+2015/05/13, github, zenaan, Zenaan Harkness, project-zen@freedbms.net

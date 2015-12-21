@@ -1,0 +1,7 @@
+Current remotes:
+20151220 - https://github.com/zenaan/zen.git (canonical)
+
+Deprecated remotes:
+
+Documentation:
+Javadoc  -  https://zenaan.github.io/zen/javadoc/zen/lang/string.html

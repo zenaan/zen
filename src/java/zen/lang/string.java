@@ -44,7 +44,7 @@ import com.google.common.primitives.Ints;
  *
  * <p> This class is the beginnings of a proper Java string class, which might
  * be thought of as a UTF-8 encoded "grapheme string" - Java as of version 8.0
- * only has APIs to work with Unicode code points and not "visual or displayed
+ * only has APIs to work with Unicode code points (codepoints) and not "visual or displayed
  * characters" such as those with multiple accents (Unicode "combining
  * characters").  Surprised? I was, thus this class.
  *
@@ -90,14 +90,21 @@ import com.google.common.primitives.Ints;
  * isCombiningCharacter(codepoint) nor isUnicodeControlCharacter(codepoint);
  * TODO - try using icu4j instead</b>
  *
+ * <p> For comparison to Java, see
+ * <a href="https://developer.apple.com/library/ios/documentation/Swift/Conceptual/Swift_Programming_Language/StringsAndCharacters.html">
+ * Swift's Strings and Characters</a>, which is much younger, better and
+ * certainly has advantage of the benefit of hindsight.
+ *
  * <p> Notes:
  *
  * <p> <ol>
  *    <li> Programming language <b>types</b> such as {@code char}, {@code
  *    byte[]} and {@code int} store arbitrary values.  In a program such values
  *    may for example have context specific meaning such as a mapping to ASCII
- *    characters, Unicode code points or to Unicode UTF-16 surrogate halves or
- *    even to graphemes, glyphs or any sequence of such or other things.
+ *    characters, Unicode code points or to Unicode UTF-16 surrogate halves
+ *    ("paired 16 bit code units" halves, <a href="#surrogates">see below</a>)
+ *    or even to graphemes, grapheme clusters, glyphs or any sequence of such or
+ *    other things.
  *
  *    <li> The <b>Unicode</b> standard specifies Unicode code points, various
  *    code point encodings, encoding specific storage 'code units' and code unit
@@ -106,7 +113,7 @@ import com.google.common.primitives.Ints;
  *    (BOM), how sequences of code points map (algorithmically) to graphemes and
  *    more.
  *
- *    <li> A Unicode <b>code point</b> represents one of a number of things,
+ *    <li> A Unicode <b>code point</b> (or codepoint) represents one of a number of things,
  *    including characters of the world's languages/ scripts, Unicode control
  *    characters, the BOM, specials (I'm sure they are), locals, combining
  *    characters and more.
@@ -130,6 +137,12 @@ import com.google.common.primitives.Ints;
  *    the user might move over with a text cursor using a "single character"
  *    cursor movement or might delete with a single press of the {@code
  *    <BACKSPACE>} or {@code <DELETE>} key.
+ *
+ *    <li> A <b>grapheme cluster</b> is the ideal way to represent "characters
+ *    as the user perceives them" and we who had enjoyed Java's hegemony pine
+ *    with grief at <a
+ *    href="https://developer.apple.com/library/ios/documentation/Swift/Conceptual/Swift_Programming_Language/StringsAndCharacters.html#//apple_ref/doc/uid/TP40014097-CH7-ID296">
+ *    Swift's competency</a> in this regard.
  *
  *    <li> A grapheme is represented by a sequence of one or more code points,
  *    such as {@code LATIN CAPITAL LETTER A} ({@code U+0041}, "A") followed by
@@ -166,13 +179,25 @@ import com.google.common.primitives.Ints;
  *    <li> A <b>Java {@code char}</b> is not a grapheme, but some graphemes can
  *    be represented in a {@code char} instance or "variable".
  *
- *    <li> A Java {@code char} is not even a code point, although it can
- *    represent some code points namely those in the <b>Unicode BMP</b>, the
- *    "basic multilingual plane" which is the first 16-bit group or Unicode
- *    "plane" of code points.  What a Java {@code char} can do is hold UTF-16
- *    surrogate halves for those code points outside the BMP.
+ *    <li><a name="surrogates"></a> A Java {@code char} is not even a code
+ *    point, although:<br>
+ *    a) it can represent some code points namely those in the <b>Unicode
+ *    BMP</b>, the "basic multilingual plane" which is the first 16-bit group or
+ *    Unicode "plane" of code points, and<br>
+ *    b) it can also hold UTF-16 surrogate code point halves
+ *    ("<b>surrogates</b>") for those code points outside the BMP.<br>
  *    If you're not impressed with Java's {@code char}s, neither am I - they're
  *    not very impressive at all.  {@code byte} - now there's a powerful type!
+ *
+ *    <li> A well formed <b>surrogate</b> is one half of a
+ *    "paired 16 bit code units" code point, whereas an ill formed surrogate is
+ *    <em>unpaired</em>, i.e. without its matching half, and is an error
+ *    condition.<br>
+ *    Refer the Unicode FAQ
+ *    <a href="http://unicode.org/faq/utf_bom.html#utf16-2">What are
+ *    surrogates?</a> and
+ *    <a href="http://unicode.org/faq/utf_bom.html#utf8-5">How do I convert an
+ *    unpaired UTF-16 surrogate to UTF-8?</a>
  *
  *    <li> A Unicode <b>encoding</b> defines a bit format for storing,
  *    transmitting or otherwise representing code points in a digital medium.
@@ -569,7 +594,7 @@ Regarding some of the draft implementation and api choices in this class:
     * characters;
     * Not implemented yet; throws UnsupportedOperationException.
     *
-    * @see hasStartingBOM()
+    * @see #hasStartingBOM
     */
    public boolean hasBOM () {
       throw new UnsupportedOperationException("Not implemented");
@@ -989,8 +1014,9 @@ Regarding some of the draft implementation and api choices in this class:
          throw new IndexOutOfBoundsException("Graphemes.appendTo: cpistart=" + cpistart
             + ", cpiend=" + cpiend + ", countCodePoints=" + cpcount);
       if (cpistart == cpiend) return;
-      StringBuilder tmp = new StringBuilder((cpistart-cpiend)*2);
       int delta = (cpiend < cpistart) ? -1 : 1;
+      tmplen = (cpistart-cpiend) * 2 * delta;
+      StringBuilder tmp = new StringBuilder(tmplen);
       for (int i = cpistart; i != cpiend; i += delta) tmp.append(chars, cpcindices[i], cpcindices[i+1]);
       sb.insert(sbdest, tmp);
    }
