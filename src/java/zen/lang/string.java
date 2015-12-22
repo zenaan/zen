@@ -1,5 +1,5 @@
 // zen.lang.string - in search of a proper Java string class
-// Copyright (C) 2015 Zenaan Harkness - Lisencse is LGPL, see LICENSE
+// Copyright (C) 2015 Zenaan Harkness - License is LGPL, see LICENSE
 
 package zen.lang;
 
@@ -464,6 +464,9 @@ import com.google.common.primitives.Ints;
  *    <li> <a href="http://unix.stackexchange.com/questions/139493/how-can-i-make-unicode-symbols-and-truetype-fonts-work-in-xterm-uxterm">http://unix.stackexchange.com/questions/139493/how-can-i-make-unicode-symbols-and-truetype-fonts-work-in-xterm-uxterm</a>
  *    <li> <a href="https://developer.apple.com/library/ios/documentation/Swift/Conceptual/Swift_Programming_Language/StringsAndCharacters.html">https://developer.apple.com/library/ios/documentation/Swift/Conceptual/Swift_Programming_Language/StringsAndCharacters.html</a> - Swift
  *    <li> <a href="http://www.cattlegrid.info/blog/2014/12/graphemes-code-points-characters-and-bytes.html">http://www.cattlegrid.info/blog/2014/12/graphemes-code-points-characters-and-bytes.html</a> - Perl 6
+ *    <li> <a href="http://illegalargumentexception.blogspot.co.nz/2009/05/java-rough-guide-to-character-encoding.html">http://illegalargumentexception.blogspot.co.nz/2009/05/java-rough-guide-to-character-encoding.html</a> - Java, fails to properly determine visible graphemes from combining chars etc.
+ *    <li> <a href="http://stackoverflow.com/questions/6828076/how-to-correctly-compute-the-length-of-a-string-in-java">http://stackoverflow.com/questions/6828076/how-to-correctly-compute-the-length-of-a-string-in-java</a> - Java
+ *    <li> <a href="https://docs.oracle.com/javase/tutorial/i18n/text/boundaryintro.html">https://docs.oracle.com/javase/tutorial/i18n/text/boundaryintro.html</a> - still more limited Java
  * </ul>
  *
  *
