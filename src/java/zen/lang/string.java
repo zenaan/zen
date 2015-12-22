@@ -33,10 +33,44 @@ import com.google.common.primitives.Ints;
 
 
 /**
- * A string in its simplest form is just a "cookie".
+ * <p> A string in its simplest form is just a "cookie".
  *
- * <p> <b>A deficient string is any string not amenable to counting its
- * characters</b> ("characters as the user perceives them" i.e. graphemes).
+ * <p> <a name="contents"></a><b>0. Contents</b><br>
+ * <a href="#introduction">1. Introduction</a><br>
+ * <a href="#understanding">2. Understanding characters</a><br>
+ * <a href="#chars">3. Some Java "characters"</a><br>
+ * <a href="#about">4. More about Java's limitations and this class</a><br>
+ * <a href="#further">5. Further Reading</a><br>
+ * <a href="#clubrules">6. UTF-8 Club Rules</a><br>
+ *
+ *
+ * <p> <b>TLDR:</b><br>
+ * Use UTF-8 strings (byte[]) everywhere possible especially between different
+ * code bases and when communicating with filesystems, and as the always
+ * preferred file encoding format in text files.  Use indexing of the UTF-8
+ * string (byte[]) to speed up locating code points and graphemes within the
+ * string (Java doesn't do this, so we've work to do).<br>
+ * Refer <b><a href="http://utf8everywhere.org/">http://utf8everywhere.org/</a></b>
+ *
+ * <p>
+ * <ol>
+ *    <li> UTF-8 strings can be safely scanned for ASCII characters (the 7-bit
+ *    set) which includes all normal punctuation and in particular directory
+ *    separators and path separators in all known operating systems.
+ *    <li> UTF-8 is also self-synchronizing in the face of one or more missing
+ *    bytes from the stream; only those characters with missing or corrupted
+ *    bytes will be in error and all other characters are read correctly - this
+ *    is not the case for example with UTF-16 encoded strings.
+ * </ol>
+ *
+ * <p> These two features alone (along with Unix and Linux compatibility) make
+ * UTF-8 the most desirable text encoding to use in almost all cases!
+ *
+ *
+ * <p> <a name="introduction"></a><b>1. <a href="#contents">Introduction</a></b>
+ *
+ * <p><b>A deficient string is any string not amenable to counting its
+ * characters</b>, i.e. "characters as the user perceives them" or "graphemes".
  *
  * <p> {@code java.lang.String} is a deficient string class, no more than a
  * lowly cookie, incapable of counting the characters it stores for display, at
@@ -61,26 +95,6 @@ import com.google.common.primitives.Ints;
  * character or "single letter" for the purposes of cursor movement, deletion,
  * insertion, selection, cutting and pasting.
  *
- * <p> <b>TLDR:</b> use UTF-8 strings (byte[]) everywhere possible especially
- * between different code bases and when communicating with filesystems, and as
- * the always preferred file encoding format in text files.  Use indexing of the
- * UTF-8 string (byte[]) to speed up locating code points and graphemes within
- * the string (Java doesn't do this, so we've work to do).
- * Refer <a href="http://utf8everywhere.org/">http://utf8everywhere.org/</a>
- *
- * <p> <ol>
- *    <li> UTF-8 strings can be safely scanned for ASCII characters (the 7-bit
- *    set) which includes all normal punctuation and in particular directory
- *    separators and path separators in all known operating systems.
- *    <li> UTF-8 is also self-synchronizing in the face of one or more missing
- *    bytes from the stream; only those characters with missing or corrupted
- *    bytes will be in error and all other characters are read correctly - this
- *    is not the case for example with UTF-16 encoded strings.
- * </ol>
- *
- * <p> These two features alone (along with Unix and Linux compatibility) make
- * UTF-8 the most desirable text encoding to use in almost all cases!
- *
  * <p> <b>This class' current limitations are due to relying upon {@code
  * java.text.BreakIterator} and its {@code getCharacterInstance(Locale)} method,
  * which only provides Unicode code point breaks and not "visual" character
@@ -98,9 +112,12 @@ import com.google.common.primitives.Ints;
  * <a href="http://www.cattlegrid.info/blog/2014/12/graphemes-code-points-characters-and-bytes.html">
  * Graphemes, code points, characters and bytes</a>.
  *
- * <p> Notes:
  *
- * <p> <ol>
+ * <p> <a name="understanding"></a><b>2. <a href="#contents">Understanding
+ * Characters</a></b>
+ *
+ * <p>
+ * <ol>
  *    <li> Programming language <b>types</b> such as {@code char}, {@code
  *    byte[]} and {@code int} store arbitrary values.  In a program such values
  *    may for example have context specific meaning such as a mapping to ASCII
@@ -311,6 +328,9 @@ import com.google.common.primitives.Ints;
  *
  * </ol>
  *
+ *
+ * <p> <a name="chars"></a><b>3. <a href="#contents">Some Java "Characters"</a></b>
+ *
  * <p> Some of the "character" concepts a Java programmer may have to handle
  * with JNI or otherwise:
  *
@@ -340,6 +360,10 @@ import com.google.common.primitives.Ints;
  *    graphemes and are displayed to a user in a textual and or graphical
  *    display environment.
  * </ol>
+ *
+ *
+ * <p> <a name="about"></a><b>4. <a href="#contents">More about Java's
+ * limitations and this class</a></b>
  *
  * <p> This Java class is an "alternative string" rough draft.
  * There's plenty it does not (yet) do which needs to be done, although the
@@ -429,6 +453,9 @@ import com.google.common.primitives.Ints;
  * whatever that happens to be (of course we do <a
  * href="http://utf8everywhere.org/">insist on UTF-8</a>).
  *
+ *
+ * <p> <a name="further"></a><b>5. <a href="#contents">Further reading</a></b>
+ *
  * <p> For further information see the following:
  *
  * <p> <ul>
@@ -454,6 +481,9 @@ import com.google.common.primitives.Ints;
  *    <li> <a href="https://developer.apple.com/library/ios/documentation/Swift/Conceptual/Swift_Programming_Language/StringsAndCharacters.html">https://developer.apple.com/library/ios/documentation/Swift/Conceptual/Swift_Programming_Language/StringsAndCharacters.html</a> - Swift
  *    <li> <a href="http://www.cattlegrid.info/blog/2014/12/graphemes-code-points-characters-and-bytes.html">http://www.cattlegrid.info/blog/2014/12/graphemes-code-points-characters-and-bytes.html</a> - Perl 6
  * </ul>
+ *
+ *
+ * <p> <a name="clubrules"></a><b>6. <a href="#contents">UTF-8 Club Rules</a></b>
  *
  * <p> <b>Rule 1.</b> UTF-8 is the only charset encoding.
  * <br><b>Rule 2.</b> See rule 1.
