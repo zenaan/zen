@@ -1,0 +1,4 @@
+#!/bin/sh
+# jc = java compile (build)
+javac -d out -cp "out:src" "$@"
+
